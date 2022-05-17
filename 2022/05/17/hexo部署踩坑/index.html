@@ -5,13 +5,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="keywords" content="" />
-  <meta name="author" content="John Doe" />
-  <meta name="description" content="" />
+  <meta name="author" content="lane" />
+  <meta name="description" content="it, maybe poem" />
   
   
   <title>
     
-      hello world 
+      hexo部署踩坑 
       
       
     
@@ -56,7 +56,7 @@
   <body>
     <div id="app">
       <div class="header">
-  <a href="/">LEEDOM</a>
+  <a href="/">lane' blog</a>
 </div>
 
 
@@ -66,7 +66,7 @@
       <i class="iconfont icon-bookmark"></i>
     </a>
   
-    <a title="github" target="_blank" href="https://github.com/leedom92/hexo-theme-leedom">
+    <a title="github" target="_blank" href="">
       <i class="iconfont icon-github"></i>
     </a>
   
@@ -118,10 +118,28 @@
     May 17, 2022
   </h3>
   <h1>
-    hello world
+    hexo部署踩坑
   </h1>
   <div class="content markdown-body">
-    
+    <p>重拾起很久没用的blog，本想换个主题，结果利用 <strong>hexo d</strong> 命令部署站点的时候出现了错误。上网查了下，错误大同小异，一般是：</p>
+<blockquote>
+<p>remote: Support for password authentication was removed on August 13, 2021. Please use a personal access token instead.<br>remote: Please see <a target="_blank" rel="noopener" href="https://github.blog/2020-12-15-token-authentication-requirements-for-&gt;git-operations/">https://github.blog/2020-12-15-token-authentication-requirements-for-&gt;git-operations/</a> for more information.</p>
+</blockquote>
+<p>stackoverflow网站上有一个高赞解答。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/68775869/support-for-password-authentication-was-removed-please-use-a-personal-access-to">https://stackoverflow.com/questions/68775869/support-for-password-authentication-was-removed-please-use-a-personal-access-to</a></p>
+</blockquote>
+<p>但是我按照此操作了之后，还是会有问题。最终是按照这位仁兄的指点解决了问题。链接如下：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://benpaodewoniu.github.io/2021/08/15/github6/">https://benpaodewoniu.github.io/2021/08/15/github6/</a></p>
+</blockquote>
+<p>其他参考链接：</p>
+<ul>
+<li>官方博客说明：<a target="_blank" rel="noopener" href="https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/">https://github.blog/2020-12-15-token-authentication-requirements-for-git-operations/</a></li>
+<li>如何设置personal access token <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/68788998/authentication-was-removed-please-use-a-personal-access-token-instead">https://stackoverflow.com/questions/68788998/authentication-was-removed-please-use-a-personal-access-token-instead</a></li>
+<li>什么是双重因素认证（Two-factor Authentication）： <a target="_blank" rel="noopener" href="https://www.ruanyifeng.com/blog/2017/11/2fa-tutorial.html">https://www.ruanyifeng.com/blog/2017/11/2fa-tutorial.html</a></li>
+</ul>
+
   </div>
   
     
@@ -134,7 +152,7 @@
   
     <div class="footer-more">
       
-        <a target="_blank" rel="noopener" href="https://github.com/leedom92/hexo-theme-leedom">Copyright © Leedom 2021</a>
+        <a target="_blank" rel="noopener" href="https://github.com/leedom92/hexo-theme-leedom">Copyright © lane 2021</a>
         
     </div>
   
