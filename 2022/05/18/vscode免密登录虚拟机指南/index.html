@@ -11,7 +11,7 @@
   
   <title>
     
-      archive_a: 2022 
+      vscode免密登录虚拟机指南 
       
       
     
@@ -33,6 +33,10 @@
 
 
   
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
 
   
 
@@ -94,57 +98,69 @@
 
 
       <div class="main">
-        <!-- 归档页，展示本站所有文章，按照年份降序归类，url形式：https://yoursite/archives/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<!-- last: 按年份把文章分组，当前遍历到的年份 -->
-<!-- now: 当前遍历到的文章的发布年份 -->
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
 
-<div class="container archives">
-  <div class="post-list">
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2022</span>
-          </h2>
-        </div>
-      
-      <div class="post-item" title="vscode免密登录虚拟机指南">
-        <div class="time-m-d">05-18</div>
-        <div class="title">
-          <a href="/2022/05/18/vscode%E5%85%8D%E5%AF%86%E7%99%BB%E5%BD%95%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%8C%87%E5%8D%97/">
-            
-              <span>vscode免密登录虚拟机指南</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="hexo部署踩坑">
-        <div class="time-m-d">05-17</div>
-        <div class="title">
-          <a href="/2022/05/17/hexo%E9%83%A8%E7%BD%B2%E8%B8%A9%E5%9D%91/">
-            
-              <span>hexo部署踩坑</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="Hello World">
-        <div class="time-m-d">05-16</div>
-        <div class="title">
-          <a href="/2022/05/16/hello-world/">
-            
-              <span>Hello World</span>
-            
-          </a>
-        </div>
-      </div>
-    
+<div class="post">
+  <h3 class="date">
+    May 18, 2022
+  </h3>
+  <h1>
+    vscode免密登录虚拟机指南
+  </h1>
+  <div class="content markdown-body">
+    <p>最近一直在完成MIT6.824的lab，工具链是vscode + virtual box。每次用vscode链接到本地虚拟机，都需要ssh登录，还需要重新输入密码，很浪费时间。因此萌生了免密登录的需求。免密登录需要把本机的公钥拷贝到想要登录的终端上保存，登录的时候指定本地的私钥地址。下面描述下详细过程。</p>
+<h3 id="SSH-keys的使用"><a href="#SSH-keys的使用" class="headerlink" title="SSH keys的使用"></a>SSH keys的使用</h3><p>为本地虚拟机或远程机器的授权需要设置SSH keys。首先必须创建密钥对，即公钥和私钥。然后把公钥拷贝到你想要连接的机器上。</p>
+<h4 id="创建本地机器的密钥对（SSH-key-pair）"><a href="#创建本地机器的密钥对（SSH-key-pair）" class="headerlink" title="创建本地机器的密钥对（SSH key pair）"></a>创建本地机器的密钥对（SSH key pair）</h4><p>先检查本地是否已经有密钥对了。当然你也可以专门为某种行为创建密钥对。在macOS&#x2F;Linux，密钥对一般会存储于 <strong>~&#x2F;.ssh</strong>文件夹中。如 <strong>~&#x2F;.ssh&#x2F;id_rsa.pub</strong> 或 <strong>~&#x2F;.ssh&#x2F;id_rsa</strong>。在Windows也是存储于 <strong>.ssh</strong> 文件夹中，如 <strong>c:\Users\your user.ssh\id_rsa.pub</strong>。</p>
+<p>如果你没找到已存在的密钥对的话，可以在本地终端如cmd窗口或powershell使用以下指令创建一对SSH密钥。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>关于SSH的相关知识，可参考： <a target="_blank" rel="noopener" href="https://wangdoc.com/ssh/index.html">https://wangdoc.com/ssh/index.html</a></p>
+</blockquote>
+<h4 id="配置vscode中的远程连接设定"><a href="#配置vscode中的远程连接设定" class="headerlink" title="配置vscode中的远程连接设定"></a>配置vscode中的远程连接设定</h4><p>打开vscode，按下F1后会弹出菜单栏，选择 <strong>Remote-SSH:Open Configuration File…</strong> 一栏，选择一个SSH配置文件，一般是<strong>C:\Users\xxx.ssh\config</strong>。配置文件的模板一般如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Host name-of-ssh-host-here</span><br><span class="line">    User your-user-name-on-host</span><br><span class="line">    HostName host-fqdn-or-ip-goes-here</span><br><span class="line">    IdentityFile ~/.ssh/id_rsa</span><br></pre></td></tr></table></figure>
+
+<p>Host可随便填，User为root或者其他用户名，HostName为IP或域名，IdentityFile为本机上的私钥路径。填完之后保存。</p>
+<blockquote>
+<p>这里需要注意的是，如果连接的本地虚拟机的ssh服务使用了端口转发，需要把ssh常用的端口22转发的本机的实际端口填写在配置上。比如实际转发的端口是2222，那么在上述配置中需要加入 <strong>Port 2222</strong>一项，否则还是无法实现登录。</p>
+</blockquote>
+<p>完成这个步骤实际上已经可以实现vscode远程连接机器了。但每次连接都需要密码登录。接下来需要把本机的公钥拷贝到远程的机器上，才能完成免密登录的步骤。</p>
+<h4 id="使用密钥对授权免密连接"><a href="#使用密钥对授权免密连接" class="headerlink" title="使用密钥对授权免密连接"></a>使用密钥对授权免密连接</h4><h5 id="macOS-x2F-Linux机器连接-macOS-x2F-Linux机器"><a href="#macOS-x2F-Linux机器连接-macOS-x2F-Linux机器" class="headerlink" title="macOS&#x2F;Linux机器连接 macOS&#x2F;Linux机器"></a>macOS&#x2F;Linux机器连接 macOS&#x2F;Linux机器</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">export USER_AT_HOST=&quot;your-user-name-on-host@hostname&quot;</span><br><span class="line">export PUBKEYPATH=&quot;$HOME/.ssh/id_rsa.pub&quot;</span><br><span class="line"></span><br><span class="line">ssh-copy-id -i &quot;$PUBKEYPATH&quot; &quot;$USER_AT_HOST&quot;</span><br></pre></td></tr></table></figure>
+
+<h5 id="windows机器连接-macOS-x2F-Linux机器"><a href="#windows机器连接-macOS-x2F-Linux机器" class="headerlink" title="windows机器连接 macOS&#x2F;Linux机器"></a>windows机器连接 macOS&#x2F;Linux机器</h5><p>在本地powershell输入以下指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$USER_AT_HOST=&quot;your-user-name-on-host@hostname&quot;</span><br><span class="line">$PUBKEYPATH=&quot;$HOME\.ssh\id_rsa.pub&quot;</span><br><span class="line"></span><br><span class="line">$pubKey=(Get-Content &quot;$PUBKEYPATH&quot; | Out-String); ssh &quot;$USER_AT_HOST&quot; &quot;mkdir -p ~/.ssh &amp;&amp; chmod 700 ~/.ssh &amp;&amp; echo &#x27;$&#123;pubKey&#125;&#x27; &gt;&gt; ~/.ssh/authorized_keys &amp;&amp; chmod 600 ~/.ssh/authorized_keys&quot;</span><br></pre></td></tr></table></figure>
+
+<p>以上的your-user-on-host即你在其他终端上的用户名，hostname一般是ip或域名。</p>
+<p>此过程实际上是把本地的公钥安全的拷贝到远程机器上的 <strong>~&#x2F;.ssh</strong> 文件夹中：首先检查并创建 <strong>~&#x2F;.ssh</strong> 文件夹中，接着修改文件夹的拥有者权限为可读写可执行。之后把本地公钥添加到 <strong>authorized_keys</strong> 文件中，并修改<strong>authorized_keys</strong>文件权限为拥有者可读写，其他人不可读写执行。</p>
+<p>完成以上步骤，就可以免密登录了。</p>
+<p>参考：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/remote/ssh">https://code.visualstudio.com/docs/remote/ssh</a></li>
+<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/remote/troubleshooting#_configuring-key-based-authentication">https://code.visualstudio.com/docs/remote/troubleshooting#_configuring-key-based-authentication</a></li>
+<li><a target="_blank" rel="noopener" href="https://code.visualstudio.com/docs/remote/troubleshooting#_quick-start-using-ssh-keys">https://code.visualstudio.com/docs/remote/troubleshooting#_quick-start-using-ssh-keys</a></li>
+</ul>
+
   </div>
+  
+    
+      <a id="older" class="blog-nav" href="/2022/05/17/hexo%E9%83%A8%E7%BD%B2%E8%B8%A9%E5%9D%91/">OLDER&nbsp;&gt;</a>
+      
+        
+            
 </div>
-
         <div class="footer">
   
     <div class="footer-more">
