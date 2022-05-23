@@ -136,6 +136,10 @@
 <h4 id="为什么需要-mapreduce"><a href="#为什么需要-mapreduce" class="headerlink" title="为什么需要 mapreduce"></a>为什么需要 mapreduce</h4><p>论文中说明，谷歌内部在过去五年（论文发表于2003年左右）实现了很多特定用途的程序，专门处理如网页爬虫，网络请求日志等大量的原始数据，为了计算出不同的衍生数据，如倒排索引。每个host被爬取页数，一段时间内最频繁请求的集合等。大部分诸如此类的计算在概念上是非常简单的。然而，初始输入数据量通常非常大，为了在合理的时间内完成，数据计算必须分散在海量机器上完成。</p>
 <p>如何并行处理计算，分发数据，处理失败故障等事项，需要编写大量复杂的代码逻辑，这让过去原先简单的计算处理变得难以理解。</p>
 <p>为了应对这种情况，google设计了一种新的抽象范式，它隐藏了并行化、容错处理、数据分发、负载均衡等细节。这种抽象由lisp等函数式语言启发。google人员意识到，大部分相关的计算都用在进行类似于map的操作（lisp语言中的概念），即将输入数据的每一份记录通过map计算转换成中间形态的kv键值对；接着用共享一个key的所有值进行了类似于reduce的操作（也是lisp的概念），适当地将map操作衍生地数据组合在一起。（这个组合过程也称<strong>shutffle</strong>，即洗牌操作）函数式的模型和用户自定义的map、reduce操作使得并行化大计算变得简单，同时也使得为容错而使用重执行计算作为一种主要机制成为可能。</p>
+<blockquote>
+<p>洗牌过程请参考以下视频：</p>
+</blockquote>
+<p><video src="/2022/05/21/mapreduce论文阅读/mapreduce.mp4" position= "absolute" width="100%" height="100%" controls="controls"></video></p>
 <h4 id="编程模型"><a href="#编程模型" class="headerlink" title="编程模型"></a>编程模型</h4><p>整个计算利用一个 <strong>key&#x2F;value</strong> 的键值对集合作为输入，产生一个 <strong>key&#x2F;value</strong>作为输出。MapReduce库的使用者主要通过自定义的Map和Reduce函数展开计算。</p>
 <img src="/2022/05/21/mapreduce%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/map_reduce_1.jpg" class="" title="MapReduce">
 
