@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="lane" />
+  <meta name="description" content="it, maybe poem" />
+  
+  
+  <title>
+    
+      MIT6.824的lab1 assignment 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">lane' blog</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="archives" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="github" target="_blank" href="">
+      <i class="iconfont icon-github"></i>
+    </a>
+  
+    <a title="email" target="" href="">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="facebook" target="" href="">
+      <i class="iconfont icon-facebooksquare"></i>
+    </a>
+  
+    <a title="twitter" target="" href="">
+      <i class="iconfont icon-twitter"></i>
+    </a>
+  
+    <a title="wechat" target="" href="">
+      <i class="iconfont icon-wechat"></i>
+    </a>
+  
+    <a title="weibo" target="" href="">
+      <i class="iconfont icon-weibo"></i>
+    </a>
+  
+    <a title="rss" target="_blank" href="/atom.xml">
+      <i class="iconfont icon-rss"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  <h3 class="date">
+    May 23, 2022
+  </h3>
+  <h1>
+    MIT6.824的lab1 assignment
+  </h1>
+  <div class="content markdown-body">
+    <p>前几天初步完成了mit6.824课程的lab1实验，下面记录一些总结和坑点。这是2020年版的实验要求。（有意思的是，在最新2022版的实验中，命名为“master”的相关模块<br>已经改成了“coordinator”的模块，而“worker”相关模块的命名则没有改动😅）因为一开始没有搜到最新版本的lab1，因此将错就错采用2020年版本，这一版本和最新版本的差异应该不大。不过还是建议直接采用最新版本。</p>
+<h3 id="工具要求"><a href="#工具要求" class="headerlink" title="工具要求"></a>工具要求</h3><p>用git拉取已有的相关模块，再go实现lab1。代码库中已经实现了顺序实现版本可供参考。位于<strong>src&#x2F;main&#x2F;mrsequential.go</strong>。同时还提供了MapReduce程序的相关插件：单词统计实例（<strong>mrapps&#x2F;wc.go</strong>）和索引排序（<strong>mrapps&#x2F;indexer.go</strong>）。可以像下面这样执行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ git clone git://g.csail.mit.edu/6.824-golabs-2020 6.824</span><br><span class="line">$ cd ~/6.824</span><br><span class="line">$ cd src/main</span><br><span class="line">$ go build -buildmode=plugin ../mrapps/wc.go</span><br><span class="line">$ rm mr-out*</span><br><span class="line">$ go run mrsequential.go wc.so pg*.txt</span><br><span class="line">$ more mr-out-0</span><br><span class="line">A 509</span><br><span class="line">ABOUT 2</span><br><span class="line">ACT 8</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>mrsequential.go的输出在<strong>mr-out-0</strong>中，输入文件则类似<strong>pg-xxx.txt</strong></p>
+<h3 id="实验要求"><a href="#实验要求" class="headerlink" title="实验要求"></a>实验要求</h3><p>实现一个分布式的MapReduce程序，包括master和worker。只有一个master进程，和多个并行处理的worker进程。这个实验只要求单机实现，不需要真正的分布式多机环境，worker通过rpc与master通信，worker从master请求一个任务。如果worker在一定时间内（lab1给定10秒）没能完成，master将会把这个任务分配给其他worker执行。</p>
+<blockquote>
+<p>2022版的课程作业最后新增了额外挑战部分：实现自己的MapReduce插件，同时在真正多机比如亚马逊提供的云服务实例环境中运行，需要把Unix套接字通信换成TCP&#x2F;IP的形式</p>
+</blockquote>
+<h3 id="设计思路："><a href="#设计思路：" class="headerlink" title="设计思路："></a>设计思路：</h3><p>代码库已给定了整体框架和测试用例，因此只需要完成上述关键细节即可。</p>
+<p>1、在master节点应有单独的rpc服务（可以是一个goroutine）和一个单独的公共定时器服务（可自己设计为一个goroutine）。worker则是一个循环请求任务+sleep的goroutine。</p>
+<p>2、master节点分为主goroutine+后台rpc goroutine（已有）+定时器goroutine。当rpc接收一个请求时会运行一个临时goroutine处理请求相关事务。可以通过channel和主goroutine进行交流。master节点需要记录：</p>
+<ul>
+<li><strong>任务状态</strong>，如等待被消费、被消费未完成、消费已超时、被消费已完成等。这也符合map reduce论文中提到的任务不能重复提交的要求。</li>
+<li><strong>任务id和文件名的映射</strong>。在主goroutine初始化时，分别给每个文件名一个任务id。</li>
+<li><strong>R任务的数量</strong>（lab1代码库中已当成参数传递进来了）以及R任务的已完成数量，方便判断Reduce阶段是否已完成。完成的话程序即可退出。</li>
+<li><strong>M任务数量</strong>（这里的总数即是给定的pg-xxx.txt文件的数量）以及M任务的已完成数量，方便判断Map阶段是否已经完成，是否应该切换到Reduce阶段。</li>
+<li><strong>等待被消费的任务id的队列集合</strong>（可以用channel实现）。初始化时可以把任务依次放入channel中，worker请求任务时可以从channel中接收（前提要判断channel长度，不然可能会阻塞），并将任务标记为已消费状态，再添加到超时监控队列中去。任务超时后再把任务放入待消费任务队列中。这里相关的channel操作都要先判断长度，避免阻塞的情况（可以将channel设置成有一定长度的缓冲区的）。</li>
+<li><strong>已经完成的任务id的队列集合</strong>（channel）。rpc收到任务完成的请求后，将任务id通过channel发给定时器服务。定时器服务收到通知后将此任务id从超时监控队列中移除，避免任务超时后又被重新放回待消费队列中。</li>
+<li><strong>超时监控队列集合</strong>（channel）。公共定时器服务定时监控所有任务完成情况，设定一个最近的定时，在超时后检查任务完成与否，执行时间是否已经超过10秒。定时器goroutine可以是for循环+select多个channel的操作。</li>
+<li>当所有任务完成后需要通知定时器goroutine退出。</li>
+</ul>
+  <img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/overview.jpg" class="" title="整体框架">
+
+<p>  整体框架如上图所示</p>
+  <img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/cp1.jpg" class="" title="consumeAndproduce">
+
+<p>  设计思路总结就是一个生产-消费者模型。这里注意：涉及到共享数据（临界区）的需要加锁操作。</p>
+<h3 id="踩坑记录"><a href="#踩坑记录" class="headerlink" title="踩坑记录"></a>踩坑记录</h3><h4 id="版本差异"><a href="#版本差异" class="headerlink" title="版本差异"></a>版本差异</h4><p>最新版本的go已经到1.18.1了，而原有代码库还是采用1.13.1的版本。因此规范的做法是将代码库的组织、依赖管理改成go module的形式。原有代码还是通过相对路径的形式导入引用，而go module不支持这种方式。在设置成go module方式后，可以在<strong>6.824</strong>根目录执行<strong>go mod init xxx</strong>更新项目的依赖管理，同时将代码库中的所有相对路径的引用改成<strong>自6.824根目录开始的路径</strong>。例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">import &quot;../mr&quot;</span><br></pre></td></tr></table></figure>
+
+<p>改成</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">import &quot;6.824/src/mr&quot;</span><br></pre></td></tr></table></figure>
+
+<p>具体 go module的设置可以上网搜索参考。</p>
+<h4 id="channel相关"><a href="#channel相关" class="headerlink" title="channel相关"></a>channel相关</h4><p>由于个人的设计思路是采用channel方式进行goroutine通知，因此在channel部分踩了很多坑。例如，channel没有初始化，没有合理设置缓冲区，使得master在成功接收rpc请求后一直无法顺利完成请求处理并返回给worker。添加打印能看到master已经接收请求了，但是后续无法处理返回，会一直提示：</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/unexpectedeof.jpg" class="" title="整体框架">
+
+<p>channel如果只是声明而没有初始化，对该channel的读写都会造成阻塞，关闭该channel会导致panic。在测试中会提示如下：</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/channel_1.jpg" class="" title="channel_1">
+
+<p>奇怪的是编译时并不会对未初始化的channel的相关代码进行警告，而是编译通过…</p>
+<p>运行课程提供的crash测试用例时也有channel的坑点。超时任务的channel一开始设计也是非缓冲区的，定时器往该channel写时会一直阻塞住（在临时goroutine中阻塞）。而主goroutine判断时采用内置的len函数判断超时任务的数量都会返回0，逻辑判断长度大于0才会从该channel中接收超时任务（第4行）。所以超时任务一直没有被主goroutine正确接收并重新加入待消费队列中（临时通知超时任务的goroutine也一直阻塞住没有回收，后续会有泄露的风险），这导致worker后续没有请求到任务，master也没有检查到超时任务，两者一直空转…最终导致测试失败。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">// 主goroutine判断是否存在超时任务并取出重新设置状态，添加到待消费队列</span><br><span class="line">func (m *Master) CheckTaskExpire() &#123;</span><br><span class="line">	len := len(m.ExpireC)</span><br><span class="line">	if len &gt; 0 &#123;</span><br><span class="line">		mu.Lock()</span><br><span class="line">		defer mu.Unlock()</span><br><span class="line">		for ; len &gt; 0; len-- &#123;</span><br><span class="line">			expiredId := &lt;-m.ExpireC</span><br><span class="line">			m.AddTask(expiredId)</span><br><span class="line">			m.TaskState[expiredId] = WAITING</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>后来改成声明+初始化一定长度设置缓冲区后，channel的相关操作就没问题了。</p>
+<h4 id="临界区资源"><a href="#临界区资源" class="headerlink" title="临界区资源"></a>临界区资源</h4><p>由于master的数据由多个worker通过rpc访问。因此有些数据会在多个goroutine间竞争共享。所以需要用sync.Mutex排他锁，在进入临界区时加锁，在退出临界区时解锁。如果没有设置锁。编译会有警告：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WARNING: DATA RACE</span><br></pre></td></tr></table></figure>
+
+<h4 id="goroutine异常导致泄露"><a href="#goroutine异常导致泄露" class="headerlink" title="goroutine异常导致泄露"></a>goroutine异常导致泄露</h4><p>一开始在调试时经常出现这样的提示：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">race: limit on 8128 simultaneously alive goroutines is exceeded, dying：</span><br></pre></td></tr></table></figure>
+
+<p>很明显由于不当操作导致goroutine数量超过上限了，大量goroutine会导致go频繁调度产生不小的上下文切换开销，而且goroutine之间的资源竞争问题突出。通过<strong>go tool trace</strong>分析排查最终确定问题</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_3.jpg" class="" title="pprof">
+
+<p>分析显示noticeExpire调用产生了6063个goroutine，这显然不合常理。相关代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">select &#123;</span><br><span class="line">case t := &lt;-timer.C: //expired</span><br><span class="line">  // calculate what task expired and clean from queue</span><br><span class="line">  timer.Stop()</span><br><span class="line">  var expireRecs TaskTimeRecs</span><br><span class="line">  var newTimeRecs TaskTimeRecs</span><br><span class="line">  for _, v := range m.TimeRecs &#123;</span><br><span class="line">    if v.Expire.Before(t) || v.Expire.IsZero() &#123;</span><br><span class="line">      expireRecs = append(expireRecs, v)</span><br><span class="line">      continue</span><br><span class="line">    &#125;</span><br><span class="line">    newTimeRecs = append(newTimeRecs, v)</span><br><span class="line">  &#125;</span><br><span class="line">  m.TimeRecs = newTimeRecs</span><br><span class="line">  go m.noticeExpire(expireRecs)</span><br></pre></td></tr></table></figure>
+
+<p>这里是在定时器goroutine中执行的，当最近的任务超时时，会将已超时的任务筛选出来并放入超时队列。由于初始设计时超时队列对应的channel没有设置缓冲区，因此为了不阻塞定时器goroutine的后续操作，通过临时goroutine进行操作。（后续已经设置一定数量的缓存区了）。通过打印发现最近的超时时间一直是过去的时间，因此不停地触发超时，直到goroutine达到上限报错。所以应该是超时监控队列的数据出了问题。最后通过排查发现在worker通知定时器有任务完成提交时，定时监控队列的更新出了问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">func (m *Master) deleteTaskTimeRec(taskId int) &#123;</span><br><span class="line">  ... // 计算完成的任务的下标index</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		mu.Lock()</span><br><span class="line">		defer mu.Unlock()</span><br><span class="line">		m.TaskState[taskId] = COMPLETED</span><br><span class="line">		m.TimeRecs = append(m.TimeRecs[:index], m.TimeRecs[:index+1]...)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>index是已完成的任务在超时监控队列中的下标，这里逻辑本意是计算出下标后，通过切片操作删除该任务的数据，结果误写成 <strong>append(m.TimeRecs[:index], m.TimeRecs[:index+1]…)</strong> 😅。正确的逻辑应该是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">func (m *Master) deleteTaskTimeRec(taskId int) &#123;</span><br><span class="line">  ... // 计算完成的任务的下标index</span><br><span class="line">	if index &lt; 0 &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		mu.Lock()</span><br><span class="line">		defer mu.Unlock()</span><br><span class="line">		m.TaskState[taskId] = COMPLETED</span><br><span class="line">		m.TimeRecs = append(m.TimeRecs[:index], m.TimeRecs[index+1:]...)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>改完之后表现就正常了。</p>
+<h4 id="定时器设计"><a href="#定时器设计" class="headerlink" title="定时器设计"></a>定时器设计</h4><p>定时器的设计还踩了另一个坑：在for循环中，走了if分支后没有continue重新执行循环，而是继续往下执行了else的内容。导致触发了定时的任务还残留在监控队列（newTimeRecs）中，导致已过期的任务还是不停触发。代码如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// 定时器for循环中</span><br><span class="line">for &#123;</span><br><span class="line">  select &#123;</span><br><span class="line">  case t := &lt;-timer.C: //expired</span><br><span class="line">    // calculate what task expired and clean from queue</span><br><span class="line">    timer.Stop()</span><br><span class="line">    var expireRecs TaskTimeRecs</span><br><span class="line">    var newTimeRecs TaskTimeRecs</span><br><span class="line">    for _, v := range m.TimeRecs &#123;</span><br><span class="line">      if v.Expire.Before(t) || v.Expire.IsZero() &#123;</span><br><span class="line">        expireRecs = append(expireRecs, v)</span><br><span class="line">        // 此处应该 continue 继续for循环，而不是继续走下面逻辑</span><br><span class="line">      &#125;</span><br><span class="line">      newTimeRecs = append(newTimeRecs, v)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="go性能分析工具"><a href="#go性能分析工具" class="headerlink" title="go性能分析工具"></a>go性能分析工具</h3><p>在课程中通过使用go分析工具，成功定位到goroutine异常的问题。否则依赖打印+手工调试，不知道要花费多少时间…</p>
+<p>在项目中，可以在主程序的main函数中添加pprofing相关逻辑，在执行目录中会输出一个<strong>trace.out</strong>文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">func main() &#123;</span><br><span class="line">	f, err := os.Create(&quot;trace.out&quot;)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		panic(err)</span><br><span class="line">	&#125;</span><br><span class="line">	defer f.Close()</span><br><span class="line">	err = trace.Start(f)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		panic(err)</span><br><span class="line">	&#125;</span><br><span class="line">	defer trace.Stop()</span><br><span class="line">	if len(os.Args) &lt; 2 &#123;</span><br><span class="line">		fmt.Fprintf(os.Stderr, &quot;Usage: mrmaster inputfiles...\n&quot;)</span><br><span class="line">		os.Exit(1)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">  // 程序逻辑...</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>生产输出文件后，执行 <strong>go tool trace trace.out</strong>，会自动启动一个prof服务：</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_1.jpg" class="" title="pprof">
+
+<p>并且默认浏览器会自动访问此端口：</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_2.jpg" class="" title="pprof">
+
+<p>输出信息会显示程序一系列的状态信息，包括goroutine的数量、goroutine的堆栈信息、网络阻塞分析、同步阻塞分析、调度延迟分析等。</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_3.jpg" class="" title="pprof">
+
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_4.jpg" class="" title="pprof">
+
+<p>上图红框即goroutine异常泄露的信息。点进去可看到每个gouroutine的执行时间、网络等待、系统调用阻塞、调度等待、GC等信息，如下图所示：</p>
+<img src="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/pprof_5.jpg" class="" title="pprof">
+
+<p>由于trace对程序性能有一定影响，因此线程生产环境要谨慎使用。相关信息可参考</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://medium.com/justforfunc/using-the-go-execution-tracer-to-speed-up-fractal-rendering-c06bb3760507">https://medium.com/justforfunc/using-the-go-execution-tracer-to-speed-up-fractal-rendering-c06bb3760507</a></li>
+<li><a target="_blank" rel="noopener" href="https://making.pusher.com/go-tool-trace/">https://making.pusher.com/go-tool-trace/</a></li>
+<li><a target="_blank" rel="noopener" href="https://tonybai.com/2021/06/28/understand-go-execution-tracer-by-example/">https://tonybai.com/2021/06/28/understand-go-execution-tracer-by-example/</a></li>
+</ul>
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><ul>
+<li>channel应该规范使用，声明并使用make完成初始化，并合理设置缓冲区</li>
+<li>reduce任务从各个文件读取数据后，需要再根据key进行一次递增排序，否则会有问题</li>
+<li>注意代码逻辑自洽</li>
+<li>善于使用工具，如借用go分析工具定位问题，达到事半功倍的效果</li>
+</ul>
+<h3 id="课程作业介绍"><a href="#课程作业介绍" class="headerlink" title="课程作业介绍"></a>课程作业介绍</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.824/2020/labs/lab-mr.html">http://nil.csail.mit.edu/6.824/2020/labs/lab-mr.html</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/2022/05/21/mapreduce%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">OLDER&nbsp;&gt;</a>
+      
+        
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        Copyright © lane 2021
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/leedom92/hexo-theme-leedom">Theme by Leedom | Powered by Hexo</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="$ grep...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>
