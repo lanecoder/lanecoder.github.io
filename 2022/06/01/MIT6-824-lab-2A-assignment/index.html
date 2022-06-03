@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="lane" />
+  <meta name="description" content="it, maybe poem" />
+  
+  
+  <title>
+    
+      MIT6.824 lab-2A assignment 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">lane' blog</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="archives" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="github" target="_blank" href="">
+      <i class="iconfont icon-github"></i>
+    </a>
+  
+    <a title="email" target="" href="">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="facebook" target="" href="">
+      <i class="iconfont icon-facebooksquare"></i>
+    </a>
+  
+    <a title="twitter" target="" href="">
+      <i class="iconfont icon-twitter"></i>
+    </a>
+  
+    <a title="wechat" target="" href="">
+      <i class="iconfont icon-wechat"></i>
+    </a>
+  
+    <a title="weibo" target="" href="">
+      <i class="iconfont icon-weibo"></i>
+    </a>
+  
+    <a title="rss" target="_blank" href="/atom.xml">
+      <i class="iconfont icon-rss"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  <h3 class="date">
+    Jun 01, 2022
+  </h3>
+  <h1>
+    MIT6.824 lab-2A assignment
+  </h1>
+  <div class="content markdown-body">
+    <p>这部分实验主要需要完成raft论文中的Figure2中的leader election和心跳通知部分，暂时不考虑log replication。Figure2是对经典raft共识算法的浓缩和总结。</p>
+<h3 id="实验要求"><a href="#实验要求" class="headerlink" title="实验要求"></a>实验要求</h3><p>具体地，实验需要完成请求和返回投票相关的RequestVote的rpc handler，server间关于选举的规则，和涉及选举的状态。当没能收到其他机器周期性的心跳通知时，就应该开启election。election timeouts在不同机器上应该是不一样的，否则可能会出现同时开启election的情况，这时候票数可能不会达成大多数，无法选出leader。另外，需要选择合理的election timeouts。论文提供的参考是150毫秒到300毫秒的区间，可以选择比300毫秒稍大一些，但不宜大太多。因为测试时会模拟失败的情况，这时会有多轮election，election timeout间隔太长可能无法在5秒内完成election。我自己的设定是300毫秒到350毫秒的随机区间。</p>
+<img src="/2022/06/01/MIT6-824-lab-2A-assignment/req_vote.jpg" class="" title="请求投票">
+
+<p>当成为Leader后，需要周期性地向其他集群中的机器发送心跳通知。心跳通知涉及的rpc handler是AppendEntries。当follower收到心跳通知时，应该重置election timeout。实验要求心跳通知的频率1秒不超过10次。</p>
+<img src="/2022/06/01/MIT6-824-lab-2A-assignment/append_entries.jpg" class="" title="心跳通知">
+
+<h3 id="设计细节"><a href="#设计细节" class="headerlink" title="设计细节"></a>设计细节</h3><h4 id="RequestVote-RPC-handler"><a href="#RequestVote-RPC-handler" class="headerlink" title="RequestVote RPC handler"></a>RequestVote RPC handler</h4><p>raft.go模块中提供了Make()函数接口，这个接口会在测试模拟启动peer时调用，主要用来完成一些初始化工作，还需要开启一个后台运行的goroutine。当follower没能收到心跳通知时，这个后台goroutine负责通过RequestVote接口开启election，向其他peer请求投票。</p>
+<p>在RequestVote接口中，需要实现election vote的诸多细节。raft论文已经提供了一些标准：</p>
+<ul>
+<li>如果候选者的周期小于自身周期，则返回false；</li>
+<li>如果还没投票（自己投自己的一票不算），或者已投的id和当前请求投票的候选者匹配，且当前候选者的日志至少和自身的日志一样是最新的（日志周期，日志索引），则投给当前候选者。</li>
+</ul>
+<p>在实现时需要注意，检查是否已经投票，除了检查已投的id，<strong>还需要检查周期是否一致</strong>。如果候选者的周期大于自身周期，而自身的已投id非0，说明这是以前周期的结果。此时还是可以投票的。另外，还需要注意检查自身的身份是否是follower。如果<strong>自身的周期不小于候选者周期</strong>，且<strong>自身不是follower身份</strong>（可能是candidator或leader），此时收到投票请求，也不能投票。</p>
+<p>当可以投票时：</p>
+<ul>
+<li>需要检查自身周期是否过时。如果自身周期小于候选者，则将自身周期置为候选者的周期。并且将自己的身份设置为follower。</li>
+<li>将已投id设置为候选者id。</li>
+<li>返回自身最新周期和投票确认。</li>
+</ul>
+<h4 id="AppendEntries-RPC-handler"><a href="#AppendEntries-RPC-handler" class="headerlink" title="AppendEntries RPC handler"></a>AppendEntries RPC handler</h4><p>AppendEntries接口对应的是日志同步和心跳通知。2A实验只考虑心跳通知的部分。论文也提供了一些细节及标准，涉及到心跳通知的只有周期检查：如果请求者的周期小于自身周期，返回false。</p>
+<p>当周期满足要求时：</p>
+<ul>
+<li>检查自身周期是否过时。如果自身周期小于候选者，则将自身周期置为候选者的周期。并且将自己的身份设置为follower。这是raft两个主要rpc handler处理的通用部分。涉及到周期的更新和检查，是raft算法的一个非常重要的点。</li>
+<li>如果请求者周期不小于自身周期，且自身处于候选者身份，说明自身当前正处于选举状态，这时候收到心跳，说明此时本轮选举已经产生新的leader，所以应该将自身身份设置为follower。</li>
+<li>重置election timeout，开启新的随机timeout。</li>
+</ul>
+<h4 id="goroutine的使用"><a href="#goroutine的使用" class="headerlink" title="goroutine的使用"></a>goroutine的使用</h4><p>实验提供了一些goroutine的使用建议。leader election 涉及两个主要的基于时间定时驱动的事件：心跳通知和定期选举。相对于将这两种事件都放在一个goroutine中处理，每个事件都有一个单独处理的gouroutine是比较合理的设计。这样可以简化事件的处理逻辑，避免代码变得复杂、难以调试。</p>
+<p>当通过rpc发起心跳通知或选举请求时，rpc同步调用的特点会造成所在goroutine阻塞，极端情况下rpc调用可能会长时间没有响应。合理的设计是将每个rpc请求都放到一个临时的goroutine中处理，这样就避免了rpc阻塞对该事件goroutine的后续执行逻辑的影响。例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">... // rpc调用前的一些逻辑处理</span><br><span class="line">for &lt;each peer&gt; &#123;</span><br><span class="line">  go func() &#123;</span><br><span class="line">    rpc调用</span><br><span class="line">  &#125; ()</span><br><span class="line">&#125;</span><br><span class="line">... // rpc调用后的一些逻辑处理</span><br></pre></td></tr></table></figure>
+
+<h4 id="锁-goroutine的使用"><a href="#锁-goroutine的使用" class="headerlink" title="锁+goroutine的使用"></a>锁+goroutine的使用</h4><p>由于涉及到rpc handler临时goroutine、rpc 请求临时goroutine、事件goroutine对一些状态数据的共享，如周期、自身身份状态等，且对周期、状态这些数据的读取、更新非常频繁，使用锁是十分必要的。</p>
+<p>但是对于一些持有锁后仍需要等待的逻辑，则应该避免。因为其他goroutine可能正在等待锁的释放并试图抢占。例如，在rpc调用前持有锁，rpc调用后释放锁的情况。由于rpc同步调用的特点，可能长时间无法响应，而锁必须等待rpc返回后才能释放。这会造成其他goroutine长时间无法抢占这把锁。这时合理的设计应该是将rpc调用放在一个临时的goroutine中并通过锁同步状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">rf.mu.Lock()</span><br><span class="line">rf.currentTerm += 1</span><br><span class="line">rf.state = Candidate</span><br><span class="line">for &lt;each peer&gt; &#123;</span><br><span class="line">  go func(currentTerm int) &#123;</span><br><span class="line">    rf.mu.Lock()</span><br><span class="line">    args.Term = currentTerm</span><br><span class="line">    rf.mu.Unlock()</span><br><span class="line">    Call(&quot;Raft.RequestVote&quot;, &amp;args, ...)</span><br><span class="line">    // handle the reply...</span><br><span class="line">  &#125; (rf.currentTerm)</span><br><span class="line">&#125;</span><br><span class="line">rf.mu.Unlock()</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="周期（term）的检查与更新"><a href="#周期（term）的检查与更新" class="headerlink" title="周期（term）的检查与更新"></a>周期（term）的检查与更新</h4><p>raft论文建议只要涉及rpc的处理，都应该及时检查、更新自身的周期、身份状态。若被请求者自身周期 currentTerm 比对方的周期 T 小，就设置 currentTerm &#x3D; T，并且身份转换为follower。在rpc返回后，调用者也应该如此。</p>
+<p>在投票和心跳请求时，往往需要向所有peer发请求，某些rpc调用可能因为网络等原因需要一定时间响应，这时调用者的周期状态就需要每次响应返回后及时更新周期、状态。不管是每次请求rpc开启一个临时goroutine的形式，还是同步调用的形式，都是如此。特别是同步调用的情况，不能等所有rpc都响应再处理。</p>
+<p>如果是一个rpc调用开启一个临时goroutine的情况，比如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">for &lt;each peer&gt; &#123;</span><br><span class="line">  go func(currentTerm int) &#123;</span><br><span class="line">    rf.mu.Lock()</span><br><span class="line">    args.Term = currentTerm</span><br><span class="line">    rf.mu.Unlock()</span><br><span class="line">    Call(&quot;Raft.RequestVote&quot;, &amp;args, ...)</span><br><span class="line">    // handle the reply...</span><br><span class="line">  &#125; (rf.currentTerm)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这时候需要将周期作为匿名函数的参数传递进去，不能直接闭包引用。因为golang闭包对<strong>变量的延迟绑定</strong>的特性会导致goroutine执行时才去取周期的最新变量。但这里需要的是开始rpc调用时的周期的初始状态。</p>
+<h4 id="事件定时检查与timer的使用"><a href="#事件定时检查与timer的使用" class="headerlink" title="事件定时检查与timer的使用"></a>事件定时检查与timer的使用</h4><p>心跳事件、选举事件的goroutine，实验建议采用 <strong>time.Sleep(d Duration)</strong> 的接口，每隔一段时间进行轮询。并且不建议采用 <strong>time.NewTimer(d Duration)</strong> 或 **time.NewTicker(d Duration)**。关于timer的使用及底层原理可参考：</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.linkinstars.com/post/efe08c85.html">https://www.linkinstars.com/post/efe08c85.html</a></p>
+</blockquote>
+<h3 id="实验相关材料"><a href="#实验相关材料" class="headerlink" title="实验相关材料"></a>实验相关材料</h3><ul>
+<li><a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.824/2020/labs/lab-raft.html">http://nil.csail.mit.edu/6.824/2020/labs/lab-raft.html</a></li>
+<li><a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.824/2020/labs/raft-locking.txt">http://nil.csail.mit.edu/6.824/2020/labs/raft-locking.txt</a></li>
+<li><a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.824/2020/labs/raft-structure.txt">http://nil.csail.mit.edu/6.824/2020/labs/raft-structure.txt</a></li>
+<li><a target="_blank" rel="noopener" href="https://thesquareplanet.com/blog/students-guide-to-raft/">https://thesquareplanet.com/blog/students-guide-to-raft/</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/">OLDER&nbsp;&gt;</a>
+      
+        
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        Copyright © lane 2021
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/leedom92/hexo-theme-leedom">Theme by Leedom | Powered by Hexo</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="$ grep...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='/" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>
