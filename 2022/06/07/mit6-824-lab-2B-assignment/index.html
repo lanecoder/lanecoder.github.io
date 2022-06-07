@@ -11,7 +11,7 @@
   
   <title>
     
-      archive_a: 2022/6 
+      mit6.824 lab-2B assignment 
       
       
     
@@ -33,6 +33,10 @@
 
 
   
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
 
   
 
@@ -94,90 +98,65 @@
 
 
       <div class="main">
-        <!-- 归档页，展示本站所有文章，按照年份降序归类，url形式：https://yoursite/archives/ -->
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
 
-<!-- last: 按年份把文章分组，当前遍历到的年份 -->
-<!-- now: 当前遍历到的文章的发布年份 -->
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
 
-<div class="container archives">
-  <div class="post-list">
-    
-        <!-- 后续文章的发布年份呈现 -->
-        <div class="content-title">
-          <h2>
-            <span>2022</span>
-          </h2>
-        </div>
-      
-      <div class="post-item" title="mit6.824 lab-2B assignment">
-        <div class="time-m-d">06-07</div>
-        <div class="title">
-          <a href="/2022/06/07/mit6-824-lab-2B-assignment/">
-            
-              <span>mit6.824 lab-2B assignment</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="MIT6.824 lab-2A assignment">
-        <div class="time-m-d">06-01</div>
-        <div class="title">
-          <a href="/2022/06/01/MIT6-824-lab-2A-assignment/">
-            
-              <span>MIT6.824 lab-2A assignment</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="MIT6.824的lab1 assignment">
-        <div class="time-m-d">05-23</div>
-        <div class="title">
-          <a href="/2022/05/23/MIT6-824%E7%9A%84lab1-assignment/">
-            
-              <span>MIT6.824的lab1 assignment</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="mapreduce论文阅读">
-        <div class="time-m-d">05-21</div>
-        <div class="title">
-          <a href="/2022/05/21/mapreduce%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB/">
-            
-              <span>mapreduce论文阅读</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="vscode免密登录虚拟机指南">
-        <div class="time-m-d">05-18</div>
-        <div class="title">
-          <a href="/2022/05/18/vscode%E5%85%8D%E5%AF%86%E7%99%BB%E5%BD%95%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%8C%87%E5%8D%97/">
-            
-              <span>vscode免密登录虚拟机指南</span>
-            
-          </a>
-        </div>
-      </div>
-    
-      <div class="post-item" title="hexo部署踩坑">
-        <div class="time-m-d">05-17</div>
-        <div class="title">
-          <a href="/2022/05/17/hexo%E9%83%A8%E7%BD%B2%E8%B8%A9%E5%9D%91/">
-            
-              <span>hexo部署踩坑</span>
-            
-          </a>
-        </div>
-      </div>
-    
+<div class="post">
+  <h3 class="date">
+    Jun 07, 2022
+  </h3>
+  <h1>
+    mit6.824 lab-2B assignment
+  </h1>
+  <div class="content markdown-body">
+    <p>lab 2B部分的实验主要完成log replication部分的内容。测试包括达成基础共识、在网络有问题的情况下达成共识、由于大多数peer失联导致无法达成共识、并发提出共识、leader失联且重新加入分区的情况、rpc通信次数的限制等。</p>
+<p>这部分实验细节非常多，很容易遗漏。测试过程也很艰难。除了逻辑推演，没有比打印调试更好的办法了😖。1000+行的打印数据十分常见，好在大部分测试实例只有3台模拟机器。</p>
+<p>下面总结一下实验过程中自己的一些细节。</p>
+<h2 id="实验细节"><a href="#实验细节" class="headerlink" title="实验细节"></a>实验细节</h2><h3 id="nextIndex和matchIndex的修正和更新"><a href="#nextIndex和matchIndex的修正和更新" class="headerlink" title="nextIndex和matchIndex的修正和更新"></a>nextIndex和matchIndex的修正和更新</h3><p>raft的论文<strong>Figure2</strong>已经标注了，在重新选举后有必要对这两种数据进行初始化。nextIndex数组存放的是下一次日志同步，leader应该同步的日志索引。matchIndex数组则存放leader和follower相一致的最大的日志索引。这些都会在日志同步过程不断修正、更新。</p>
+<img src="/2022/06/07/mit6-824-lab-2B-assignment/after_election.jpg" class="" title="初始化">
+
+<p>而在实验中这两部分的修正、更新常常令人十分困惑。一开始在重新选举后，我错误地将matchIndex设置为leader的日志量。在日志正常同步的情况下，这或许没有什么问题。但在peer间日志不一致的时候，比如某些peer由于网络或宕机的原因，并没有新的周期的日志。这时候可能会有这样的问题：leader根据matchIndex更新得出新的commitIndex，而这时候某些peer其实并没有对应matchIndex的日志。虽然peer在接收AppendEntriesRPC时根据lastLogIndex作出了不能同步的反馈，但计算最新的提交日志索引–commitIndex时还是会有问题。</p>
+<p>所以重选举后重置matchIndex，在各个peer反馈后再计算新的提交日志索引，可以避免上述的错误情况。</p>
+<h3 id="同步日志操作参数设置"><a href="#同步日志操作参数设置" class="headerlink" title="同步日志操作参数设置"></a>同步日志操作参数设置</h3><p>一开始在日志同步时，我将rpc的PrevLogIndex设置为matchIndex（初期matchIndex被设置为leader的日志长度，这是十分自然的想法），后来又根据commitIndex设置PrevLogIndex，使得数据间的依赖关系十分混乱。合理的做法是根据nextIndex设置PrevLogIndex。一般情况下，PrevLogIndex后续索引即应是nextIndex。</p>
+<h3 id="同步日志操作接收判断"><a href="#同步日志操作接收判断" class="headerlink" title="同步日志操作接收判断"></a>同步日志操作接收判断</h3><p>根据论文标准，peer接收日志同步请求时，需要判断请求同步者和自身在本次同步之前最后一条同步的日志周期和索引。我错误地用请求者当前地周期去比较双方周期，导致同步请求一直失效。</p>
+<h3 id="连续的agreement请求"><a href="#连续的agreement请求" class="headerlink" title="连续的agreement请求"></a>连续的agreement请求</h3><p>在TestFailNoAgree2B测试过程中，发现有些指令在短时间内重复发送了。后来发现是测试实例尝试连续提出agreement导致的。</p>
+<img src="/2022/06/07/mit6-824-lab-2B-assignment/after_election.jpg" class="" title="初始化">
+
+<p>旧的逻辑是当收到新的提交请求时，就会立刻检查并触发一个日志同步rpc操作。rpc操作都放在一个临时的goroutine中。短时间内不同提交请求连续触发的goroutine检测到的下一条待同步日志都是一致的，最终导致了短期内两次独立的尝试同步日志的rpc操作。</p>
+<p>应对这种情况，加上了同步操作。当有新的agreement请求时，检查当前peer的日志同步操作是否还在进行中，如果已经结束或没有此操作，则可以进行对此peer的日志同步请求操作，并将此操作标记为进行中。当日志同步请求操作结束后，再将此操作标记为已结束。</p>
+<h3 id="提交日志索引的计算更新"><a href="#提交日志索引的计算更新" class="headerlink" title="提交日志索引的计算更新"></a>提交日志索引的计算更新</h3><p>论文中对提交日志索引更新有如下描述：</p>
+<blockquote>
+<p>If there exists an N such that N &gt; commitIndex, a majority of matchIndex[i] ≥ N, and log[N].term &#x3D;&#x3D; currentTerm:set commitIndex &#x3D; N</p>
+</blockquote>
+<p>这里虽然提供了标准，且限制了当前任期无法对旧的周期日志进行确认提交操作，但是对何时更新，提交日志初始状态并没有过大描述。在实验中，我是将此操作放在日志同步请求返回后进行的。</p>
+<p>一开始我将commitIndex初始化为0，新的commitIndex为旧索引+1，然后尝试判断新索引是否满足条件，但是某些情况下这样的判断将导致提交日志索引无法更新。比如，当旧的leader因为宕机或者网络问题，导致出现新的选举并顺利产生新leader时，这时新leader的当前周期肯定比之前的日志的周期都大，因此<strong>log[N].term &#x3D;&#x3D; currentTerm</strong>这个条件将永远无法达成。</p>
+<p>正确的做法是日志同步请求操作返回后，尝试用当前操作同步日志的索引去进行判断。如果commitIndex被更新为当前操作同步日志的索引，也意味着此索引之前的日志也是commited状态的。</p>
+<h3 id="“term-changed-too-often”"><a href="#“term-changed-too-often”" class="headerlink" title="“term changed too often”"></a>“term changed too often”</h3><p>在测试TestConcurrentStarts2B实例时，失败提示：”term changed too often”。一开始摸不着头脑。原来是leader的心跳定时器没有更新，导致后续一直没有心跳，其他peer没有收到心跳通知，就会一直尝试开启选举，导致周期不断变动。</p>
+<h3 id="节点还没开启选举但已收到其他节点的选举请求"><a href="#节点还没开启选举但已收到其他节点的选举请求" class="headerlink" title="节点还没开启选举但已收到其他节点的选举请求"></a>节点还没开启选举但已收到其他节点的选举请求</h3><p>由于是单机测试，实际上投票、日志同步操作都不需要真正的网络IO。这时候会有已投完票但还有其他选举没开启的情况。</p>
+<p>这里可以加一个特殊判断，若首次开始选举时检测到已投票，则不需要开启本次选举，重置选举定时。（正常情况应该是不需要作此特殊处理的）</p>
+<h3 id="rejoin情况下的leader重连、失联操作"><a href="#rejoin情况下的leader重连、失联操作" class="headerlink" title="rejoin情况下的leader重连、失联操作"></a>rejoin情况下的leader重连、失联操作</h3><p>在重连、失联的重复操作下，leader的选举能否达成一致是十分关键的。在接收投票请求的rpc操作时，除了常规的周期判断，还应该判断投票者和候选者之间的日志周期是否吻合，”If votedFor is null or candidateId, and candidate’s log is at least as up-to-date as receiver’s log, grant vote”。即候选者的最后一条日志的周期，必须大于等于投票者的周期。若周期一致，则比较索引大小。只有这两种情况，投票者才能投票给候选者。</p>
+<h3 id="rpc响应"><a href="#rpc响应" class="headerlink" title="rpc响应"></a>rpc响应</h3><p>在测试实例中，当模拟网络失联时，会出现rpc无法响应的情况，这时候应该设置一个无法响应的定时返回，避免rpc长时间无法响应、返回。</p>
+
   </div>
+  
+    
+      <a id="older" class="blog-nav" href="/2022/06/01/MIT6-824-lab-2A-assignment/">OLDER&nbsp;&gt;</a>
+      
+        
+            
 </div>
-
         <div class="footer">
   
     <div class="footer-more">
