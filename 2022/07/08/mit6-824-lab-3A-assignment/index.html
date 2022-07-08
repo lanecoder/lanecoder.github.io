@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="Core"><title>mit6.824 lab-3A assignment · lane's blog</title><meta name="description" content="本来以为lab2实验做完后，lab3会简单一点。。。结果花费的时间还比lab2多。lab3和lab2联系紧密，需要调试的工作量也多了不少。
+实验要求实现一个基于lab2的可容错的键值存储服务器。此服务器也相当于一个状态复制机，执行底层raft已提交的日志操作。服务器能在网络分区、网络故障、服务器重启"><meta name="keywords" content="博客"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"><script src="/js/jquery.js"></script><meta name="generator" content="Hexo 6.2.0"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">lane's blog</a></h3></div></div><ul class="social-links"><li><a target="_blank" rel="noopener" href="https://github.com/lanecoder"><i class="fa fa-github"></i></a></li><li><a href="mailto:x@jixian.io"><i class="fa fa-envelope"></i></a></li><li><a target="_blank" rel="noopener" href="http://sighttp.qq.com/authd?IDKEY="><i class="fa fa-qq"></i></a></li><li><a target="_blank" rel="noopener" href="https://zhihu.com/people/"><i class="fa fa-mortar-board"></i></a></li></ul><div class="footer"><div class="p"> <span>© 2017 - 2022 </span><i class="fa fa-star"></i><span> Core</span></div><div class="by_farbox"><span>Powered by </span><a href="https://hexo.io/zh-cn/" target="_blank">Hexo </a><span> & </span><a href="https://github.com/mrcore/hexo-theme-Anatole-Core" target="_blank">Anatole-Core  </a></div><div class="beian"><a href="http://www.beian.miit.gov.cn/" target="_blank"></a><span style="height:10px;margin-left: 10px;">|</span><img src="/images/gongan.png" style="height:10px;margin-left: 10px;position: relative;top: 1px;"><span style="margin-left: 2px;"></span></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">首页</a></li><li><a href="/archives">归档</a></li><li><a href="/tags">标签</a></li><li><a href="/about">关于</a></li><li><a href="/guestbook">留言</a></li></div><div class="information"><div class="back_btn"><li><a class="fa fa-chevron-left" onclick="window.history.go(-1)"> </a></li></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>mit6.824 lab-3A assignment</a></h3></div><div class="post-content"><p>本来以为lab2实验做完后，lab3会简单一点。。。结果花费的时间还比lab2多。lab3和lab2联系紧密，需要调试的工作量也多了不少。</p>
+<h2 id="实验要求"><a href="#实验要求" class="headerlink" title="实验要求"></a>实验要求</h2><p>实现一个基于lab2的可容错的键值存储服务器。此服务器也相当于一个状态复制机，执行底层raft已提交的日志操作。服务器能在网络分区、网络故障、服务器重启的情况下正常运行。实验还要求强一致性即<strong>线性一致性</strong>。这也是实验的难重点。</p>
+<p>Get&#x2F;Put&#x2F;Append操作需要一段时间，会经历start invoke、wait commit到completion。所以操作之间的并发是大概率会发生的，不同操作之间的时间段会交错、重叠，不同客户端会同时发起请求。</p>
+<h2 id="客户端重试机制"><a href="#客户端重试机制" class="headerlink" title="客户端重试机制"></a>客户端重试机制</h2><p>由于客户端Clerk一开始不知道哪个服务器是leader，或中途leader变更了，因此当Clerk发送rpc操作到错误的服务器时，需尝试重复发送到其他的服务器。另外由于网络问题，rpc发送并无响应，此时Clerk也需要尝试再次发送。一旦Clerk发送并成功返回结果时，Clerk可记录下当前的leader序号，避免下次重复遍历发送。</p>
+<h2 id="状态复制机"><a href="#状态复制机" class="headerlink" title="状态复制机"></a>状态复制机</h2><p>可容错的kv存储服务器必然要求有多个副本，因此实验中会启动多个服务器，组成一个完整的kv存储服务集群，但对外表现得像单个服务器。Clerk只能和leader交互，当Clerk发送到不是leader的服务器时，会尝试与其他服务器联系，直到最终找到正确的leader。多个服务器之间不能直接通信，只能通过底层的raft协共识协议进行交互。服务器也不应该关系底层raft如何实现，这样才能实现解耦。</p>
+<p>多个服务器之间的备份同步是通过状态复制机（StateReplicatemachine）实现的。通过让主&#x2F;备份机器按照相同的顺序执行相同的输入请求，实现最终状态的一致。这也区分于ft-vm（fault tollerance virtual machine）的方式。ft-vm是通过state transfer实现备份同步的，state transfer会持续性地从主机器将所有状态（cpu&#x2F;内存&#x2F;IO设备&#x2F;中断指令等）同步到备份机器，这对网络带宽要求非常高。</p>
+<p>在实验中，可在后台启动一个专门处理raft提交的日志操作的协程。通过for+select定时轮询，获取<strong>applyCh</strong>通道中的消息，并执行对应的操作。</p>
+<h2 id="锁持有策略"><a href="#锁持有策略" class="headerlink" title="锁持有策略"></a>锁持有策略</h2><p>server端在接收客户端请求后，开始向底层raft提议操作。之后便开始等待提议提交，最终完成后返回给客户端。接收请求后一般会持有锁方便后续操作，但应该在调用<strong>raft.Start()</strong>前释放，因为底层的raft操作也会持有一个公共锁。假设一种情况，某个rpc请求持有了kv服务器的锁A，在请求raft进行提交操作时竞争持有raft锁B失败了，失败后该协程进入睡眠状态。这时候其他的rpc请求处理协程将无法获得锁A，而实验中大概率会出现并发处理rpc的情况，所以应该尽量避免同时持有双重锁，减少锁的竞争。</p>
+<h2 id="达成共识与状态通知"><a href="#达成共识与状态通知" class="headerlink" title="达成共识与状态通知"></a>达成共识与状态通知</h2><p>从start agreement到最终返回结果给客户端不是一个即时操作。在尝试达成共识前，临时的rpc处理协程会等待直到相应的操作完成。这时候后台的处理raft日志提交操作的协程应该如何合理地通知等待的rpc处理协程呢？</p>
+<p>一开始使用了一个公共的通道进行通知处理。临时的rpc协程发起提议后，在公共通道Done等待通知。当执行完raft提交的日志后，后台协程通过公共通道进行通知。如果固定每次只有一个rpc处理时，这不会有问题。但如果并发请求，情况会变得不可控。</p>
+<p>当有多个rpc协程等待接收一个公共的通道时，此channel会维护一个等待接收的协程队列。当有消息到达时，golang底层的runtime系统会选择并唤醒一个等待的协程作为消息接收对象。但关于接收协程的调度策略并不是先来后到的。因此临时的rpc协程并不能保证能对应接收到先前发起提议的日志。这时如何对不属于自己请求的提议的操作会变得更加复杂。</p>
+<p>后续权衡再三，决定使用<strong>信号量通知</strong>。当后台处理完底层raft提交的日志后，通过广播（broadcast函数）的形式，通知所有等待公共信号量的rpc协程。rpc协程被唤醒后，判断自己先前提议的操作是否已被提交。若提议已达成共识，则释放此信号量锁，再进行后续操作。若先前的提议还未提交，则继续释放此信号量锁并进入睡眠状态（wait函数）。</p>
+<p>这种方式的好处是提议达成共识后不需要一对一通知了，避免了通道通知的复杂度。缺点是增加了锁的竞争互斥，在kv服务锁、raft锁基础又多了一个锁，对于锁的系列需要小心翼翼的操作才能避免莫名其妙的死锁（deadlock）。锁的互斥竞争引发的协程调度也会对程序性能造成一定的影响。</p>
+<h2 id="一个死锁的惨案"><a href="#一个死锁的惨案" class="headerlink" title="一个死锁的惨案"></a>一个死锁的惨案</h2><p>在<strong>TestUnreliable3A</strong>测试实例中出现过相互等待导致死锁的情况。</p>
+<p>在死锁优化前，不同锁的持有可能会同时进行。比如先持有L1，接着尝试持有L2，执行某些操作后再依次释放L2、L1。</p>
+<ul>
+<li>某次的rpc操作A成功持有了kv服务锁L1，接着尝试向底层raft请求提议，这一过程也需要持有raft锁L2。不幸的是此次竞争失败了，只能等待L2</li>
+<li>B操作中，后台的提交日志的执行协程在收到一个提交通知后，需要等待kv服务锁L1</li>
+<li>B操作紧接着又有日志提交通知，暂且称为C操作。此日志提交通知是raft层的AE接收操作的临时rpc协程通过无缓冲通道（applyCh变量）同步的。当B操作还没执行完时，就无法循环再次从applyCh中及时接收新的消息通知。B操作无法接收通道消息，又会导致AE操作协程一直阻塞在applyCh通道的发送状态，而AE操作所在的临时协程又持有着raft锁L2。</li>
+</ul>
+<p>这样，A等待着C释放锁L2，C等待着B接收通道消息，B又等待着A释放锁L1，造成了循环等待的死锁情况。</p>
+<p>所以，不同的锁一般不建议同时持有。上述的A操作就是想同时持有两个锁，处理不当最终导致了死锁。</p>
+<h2 id="分布式的幂等性"><a href="#分布式的幂等性" class="headerlink" title="分布式的幂等性"></a>分布式的幂等性</h2><p>在不可靠的网络中，rpc请求可能不可达，也可能服务器接收后无法响应。另外还会出现leader变更、分区、脑裂（split brain）等情况。因此Clerk应该重复尝试提交Get&#x2F;PutAppend等操作。这使得在分布式的环境中，请求的幂等性保证变得复杂。没有幂等性的保证，最终结果将会重复执行，或者没有执行到。kv存储服务的底层raft协议只能保证提交日志达成共识，不保证提议记录的去重。对于重复的提议请求，比如在x值尾添加“a”，raft视两个相同的动作为不同的两个序列操作是合理的。如果kv存储服务层没有作去重处理，那么结果将是“aa”。而预期结果是“a”。</p>
+<p>因此客户端发起的rpc请求应该有一个对应的唯一标识，kv服务器应该接收并持有rpc的唯一标识数据。当有重复的rpc请求时，kv服务可根据提供的rpc标识判断此rpc请求是否还在进行中（或已经完成），避免PutAppend操作的重复执行。</p>
+<h2 id="线性一致性"><a href="#线性一致性" class="headerlink" title="线性一致性"></a>线性一致性</h2><p>由于分布式系统的可容错性保证，在不同节点间的数据复制成为了常规手段。而数据的复制必然会存在节点间的数据一致性问题。只要同一份数据存在于不同的副本节点，就存在数据不一致的风险。</p>
+<p>然而，对系统外部的用户来说，他们并不关心这些保证一致性所带来的系统内部复杂设计。对他们来说，就好像是只有一个单一的副本一样。表现得像一个单一副本，实际上是靠特定的分布式一致性模型保证的。</p>
+<p>一个分布式系统对读写操作的某种排序和执行规则，定义了一种<strong>一致性模型</strong>（consistency model）。当系统选定了一个特定的一致性模型，如线性一致性或顺序一致性，就只能呈现一种特定的序列操作结果。</p>
+<p>一个系统的执行历史是一系列的客户端请求，或许这是来自多个客户端的多个请求。在lecture7中，morris曾概括<strong>linearizability</strong>的两个限制条件：</p>
+<ul>
+<li>if one operation finished before another started,then the one that finished first has to come first in the history.（如果一个操作在另一个操作开始前结束了，那么这个操作必须在执行历史中出现在另一个操作前面）</li>
+<li>if some read sees a pariticular written value,then the read must come after the write in the order.（执行历史中，读操作必须在相应的key的写操作之后）</li>
+</ul>
+<p>在此基础上，如果客户端的请求历史构建的序列满足：</p>
+<ul>
+<li>序列中的请求顺序与实际时间匹配</li>
+<li>每个读请求看到的都是序列中的前一个写请求写入的值</li>
+</ul>
+<p>那么请求历史记录就是线性一致的。</p>
+<p>线性一致性的隐藏的时效性保证也使得该一致性模型是一种<strong>strong consistency</strong>（强一致性），它使得我们总能读到数据最新的值。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://mit-public-courses-cn-translatio.gitbook.io/mit6-824/lecture-08-zookeeper/8.1">https://mit-public-courses-cn-translatio.gitbook.io/mit6-824/lecture-08-zookeeper/8.1</a></li>
+<li><a target="_blank" rel="noopener" href="https://frankma.netlify.app/posts/database/raft-lab/">https://frankma.netlify.app/posts/database/raft-lab/</a></li>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzA4NTg1MjM0Mg==&amp;mid=2657261790&amp;idx=1&amp;sn=08449ee5b39d93b25442c1e583e3ba99">https://mp.weixin.qq.com/s?__biz=MzA4NTg1MjM0Mg==&amp;mid=2657261790&amp;idx=1&amp;sn=08449ee5b39d93b25442c1e583e3ba99</a></li>
+</ul>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2022-07-08</span><i class="fa fa-tag"></i><a class="tag" href="/tags/mit6-824-raft-kv-server/" title="mit6.824 raft kv_server">mit6.824 raft kv_server </a><span class="leancloud_visitors"></span></div></div></div></div><div class="share"><div class="evernote"><a class="fa fa-bookmark" href="" onclick="javascript:join_favorite()" ref="sidebar"></a></div><div class="weibo"><a class="fa fa-weibo" href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));"></a></div><div class="twitter"><a class="fa fa-twitter" target="_blank" rel="noopener" href="http://twitter.com/home?status=,http://example.com/2022/07/08/mit6-824-lab-3A-assignment/,lane's blog,mit6.824 lab-3A assignment,;"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a class="btn" role="navigation" href="/2022/06/16/mit6-824-lab-2C-assignment/" title="mit6.824 lab-2C assignment">下一篇</a></li></ul></div><script src="/js/visitors.js"></script><a id="comments"></a><div id="vcomments" style="margin:0 30px;"></div><script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="//cdn.jsdelivr.net/gh/xcss/valine@latest/dist/Valine.min.js"></script><script>var valine = new Valine({
+  el:'#vcomments',
+  notify:false || false, 
+  verify:false|| false, 
+  app_id:'',
+  app_key:'',
+  placeholder:'欢迎留言...',
+  path: window.location.pathname,
+  serverURLs: '',
+  visitor:true,
+  recordIP:true,
+  avatar:'mp'
+})</script></div></div></div></div><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script><script src="/js/add-bookmark.js"></script><script src="/js/baidu-tongji.js"></script></body></html>
