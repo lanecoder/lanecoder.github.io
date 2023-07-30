@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="lane" />
+  <meta name="description" content="it, maybe poem" />
+  
+  
+  <title>
+    
+      mit6.s081 lec6 review 
+      
+      
+    
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/favicon.png">
+    <link rel="icon" href="/images/favicon.png">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Roboto:400,400italic,600|Roboto+Mono" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/common.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+
+
+  
+
+  
+    
+<link rel="stylesheet" href="/css/post.css">
+
+  
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <a href="/">lane' blog</a>
+</div>
+
+
+      <p class="links">
+  
+    <a title="archives" target="" href="/archives/">
+      <i class="iconfont icon-bookmark"></i>
+    </a>
+  
+    <a title="github" target="_blank" href="">
+      <i class="iconfont icon-github"></i>
+    </a>
+  
+    <a title="email" target="" href="">
+      <i class="iconfont icon-envelope"></i>
+    </a>
+  
+    <a title="facebook" target="" href="">
+      <i class="iconfont icon-facebooksquare"></i>
+    </a>
+  
+    <a title="twitter" target="" href="">
+      <i class="iconfont icon-twitter"></i>
+    </a>
+  
+    <a title="wechat" target="" href="">
+      <i class="iconfont icon-wechat"></i>
+    </a>
+  
+    <a title="weibo" target="" href="">
+      <i class="iconfont icon-weibo"></i>
+    </a>
+  
+    <a title="rss" target="_blank" href="/atom.xml">
+      <i class="iconfont icon-rss"></i>
+    </a>
+  
+</p>
+
+
+      <div class="main">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+
+<div class="post">
+  <h3 class="date">
+    Jul 29, 2023
+  </h3>
+  <h1>
+    mit6.s081 lec6 review
+  </h1>
+  <div class="content markdown-body">
+    <p>最近断断续续的把lecture6的课程看完，并做完实验。在此做个总结，以便日后参考。</p>
+<h2 id="前置知识要点"><a href="#前置知识要点" class="headerlink" title="前置知识要点"></a>前置知识要点</h2><h3 id="RISC-V-reg-calling-convention中的caller-saved和callee-saved"><a href="#RISC-V-reg-calling-convention中的caller-saved和callee-saved" class="headerlink" title="RISC-V reg calling convention中的caller saved和callee saved"></a>RISC-V reg calling convention中的caller saved和callee saved</h3><ul>
+<li><p>caller saved register一般不会在函数调用中保存，该类寄存器可能会被其他函数重写覆盖，因此也称临时寄存器。返回地址（ra寄存器）就是一个很好的例子。函数一般都有一个返回地址（ra），当a函数调用b函数时，b函数经过计算后，通过重写返回地址中的值返回结果，这意味着对被调用者（callee）来说，该类寄存器是可以随意使用的。</p>
+</li>
+<li><p>callee saved register一般会在函数调用中保存。callee会认为该类reg是caller在调用后仍需使用的寄存器，因此callee会在被调用前保存这类寄存器的值，调用过程中可能会覆盖这类寄存器的值，在调用结束前再恢复回原来的值。对应的例子有帧指针（frame point）。</p>
+</li>
+</ul>
+<h3 id="栈"><a href="#栈" class="headerlink" title="栈"></a>栈</h3><p>每次函数调用，系统会创建一个栈帧（stack frame），栈帧是通过移动栈指针（sp）进行分配的。需要注意的是，栈空间在虚拟内存中是自高位向低位增长的。如下图所示：</p>
+<img src="/2023/07/29/mit6-s081-lec6-review/stackframe.jpg" class="" title="栈帧指令">
+
+<h2 id="课程要点"><a href="#课程要点" class="headerlink" title="课程要点"></a>课程要点</h2><p>这一节课程主要涉及Traps和system call这两个重要的概念。</p>
+<h3 id="Traps"><a href="#Traps" class="headerlink" title="Traps"></a>Traps</h3><p>导致CPU搁置执行常规指令集并强制进入一个特殊模式的控制流，以处理特殊事件，被称为Traps，trap过程一般伴随用户态和内核态的转换。这些特殊事件包括：</p>
+<ul>
+<li>系统调用（system call）</li>
+<li>异常（exception）</li>
+<li>设备中断（device interrupt）</li>
+</ul>
+<p>Traps的常规流程：</p>
+<ol>
+<li>控制转移到kernel中</li>
+<li>kernel保存相关寄存器状态以便trap执行后恢复原状</li>
+<li>kernel执行合适的handler code</li>
+<li>kernel恢复原有的寄存器状态</li>
+<li>恢复trap之前的执行流程</li>
+</ol>
+<h3 id="system-call的traps过程"><a href="#system-call的traps过程" class="headerlink" title="system call的traps过程"></a>system call的traps过程</h3><h4 id="RISC-V-trap-machinery"><a href="#RISC-V-trap-machinery" class="headerlink" title="RISC-V trap machinery"></a>RISC-V trap machinery</h4><p>每个CPU都有一系列的控制寄存器，kernel通过更新这些寄存器来告诉CPU有trap发生了，并如何处理Traps。以下会列出一些最重要的寄存器：</p>
+<ul>
+<li><p>stvec。kernel会将此寄存器更新为trap handler的地址存储，RISC-V会跳转到这里处理trap。即它会指向kernel中处理trap指令的起始地址。</p>
+</li>
+<li><p>sepc。当trap发生时，RISC-V将program counter（程序计数器）保存于此。sret指令（从trap中返回）会将sepc复制到pc。kernel能通过写sepc控制sret指令的跳转到任意地址。</p>
+</li>
+<li><p>sscratch。kernel会设置为process的trapframe虚拟地址，因为在kernel前一次切换回用户空间时，内核执行了set sscratch指令，将此寄存器的内容设置为了trapframe page的虚拟地址。</p>
+</li>
+<li><p>sstatus。sstatus中的SIE比特位控制了device interrupt是否被允许。如果kernel清除了SIE比特位，RISC-V将会延迟device interrupt直到kernel设置该位。SPP比特位则揭示了trap来自user mode还是supervisor mode，同时控制着sret指令返回的模式。</p>
+</li>
+</ul>
+<p>以上这几个和trap相关的寄存器都是在supervisor mode下使用，它们不能在user mode下被读写。也有大致相同数量的寄存器只能在machine mode下执行，xv6操作系统只在timer interrupt的特殊用例下使用。</p>
+<p>多核环境下的CPU都会有专属的寄存器，多颗CPU能同时胜任trap handle。</p>
+<p>以下是大部分trap type（除了timer interrupt）的RISC-V硬件部分的处理流程：</p>
+<ol>
+<li><p>如果trap type是device interrupt，且sstatus的SIE比特位被清除，将不会有任何操作。</p>
+</li>
+<li><p>清除SIE禁止interrupts。</p>
+</li>
+<li><p>将pc拷贝到sepc中。</p>
+</li>
+<li><p>保存当前模式到sstatus寄存器中的SPP比特位。</p>
+</li>
+<li><p>设置trap’s cause 到scause中。</p>
+</li>
+<li><p>设置supervisor mode。</p>
+</li>
+<li><p>拷贝stvec到pc中。</p>
+</li>
+<li><p>开始在新的pc指向的地址执行程序。</p>
+</li>
+</ol>
+<p>以上硬件层面处理流程并没有切换page table，也没有切换到系统栈中，更没有保存任何寄存器（除了pc）。kernel软件层面必须完成这些工作。原因之一在于CPU（硬件层面）在trap发生时只负责最小化任务，这样的方式可为软件提供灵活度。一些操作系统在某些情况下并不要求切换page table以便提高性能。</p>
+<h4 id="以write-system-call为例的trap流程"><a href="#以write-system-call为例的trap流程" class="headerlink" title="以write system call为例的trap流程"></a>以write system call为例的trap流程</h4><p>下图所示为跟踪write()系统调用的执行流程：</p>
+<img src="/2023/07/29/mit6-s081-lec6-review/trapoverview.jpg" class="" title="trapoverview">
+
+<br>
+
+<ul>
+<li>用户请求write系统调用，SYS_write（常量16）被载入到a7寄存器中。之后执行ecall指令。ecall指令执行内容包括：将pc拷贝到sepc（supervisor exception program counter）中；将用户态设置为内核态；将stvec设置为uservec函数地址，并将stvec拷贝到pc寄存器中，这会导致程序跳转到该函数地址。正如上述提到，机器层面并不会切换page table，那ecall是如何找到uservec函数的虚拟地址的呢？答案在于用户空间和内核空间都将trampoline page小心地映射到了相同地虚拟地址，所以在机器层面执行这个状态切换中不需要切换页表。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># user/usys.S write代码段落</span><br><span class="line">...</span><br><span class="line">.global write</span><br><span class="line">write:</span><br><span class="line"> li a7, SYS_write</span><br><span class="line"> ecall</span><br><span class="line"> ret</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>程序从ecall开始跳转进kernel中，ret则从kernel返回到用户空间。在user&#x2F;sh.asm文件中查找ecall指令地址为0xde4</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">0000000000000de2 &lt;write&gt;:</span><br><span class="line">.global write</span><br><span class="line">write:</span><br><span class="line"> li a7, SYS_write</span><br><span class="line">     de2:	48c1                	li	a7,16</span><br><span class="line"> ecall</span><br><span class="line">     de4:	00000073          	ecall</span><br><span class="line"> ret</span><br><span class="line">     de8:	8082                	ret</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>我们在开启的gdb调试器中指定sh程序调试，键入<code>file user/_sh</code>，接着键入<code>b *0xde2</code></p>
+<blockquote>
+<p>由于<code>b *0xde4</code> 会提示Cannot access memory at address 0xde4的错误，因此我改变了策略，在0xde2地址打上断点，然后键入n步进调试）</p>
+</blockquote>
+<p>在ecall处打上断点。然后键入<code>c</code>，不出意外的话，将在<code>ecall</code>前阻塞住。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Thread 1 hit Breakpoint 1, write () at user/usys.S:30</span><br><span class="line">30       li a7, SYS_write</span><br></pre></td></tr></table></figure>
+
+<p>我们连续键入两次<code>n</code>，然后查看程序执行到了何处，键入<code>print $pc</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">(gdb) n</span><br><span class="line">0x0000003ffffff000 in ?? ()</span><br><span class="line">=&gt; 0x0000003ffffff000:  73 15 05 14     csrrw   a0,sscratch,a0</span><br><span class="line">(gdb) print $pc</span><br><span class="line">$3 = (void (*)()) 0x3ffffff000</span><br><span class="line">(gdb) print/x $stvec</span><br><span class="line">$6 = 0x3ffffff000</span><br><span class="line">(gdb) print/x $a0   </span><br><span class="line">$10 = 0x3fffffe000</span><br></pre></td></tr></table></figure>
+
+<p>此时地址<code>0x3ffffff000</code>应该就是trampoline page的虚拟地址，对应stvec寄存器的值，程序已经准备进入真正的trap处理流程了。uservec段的汇编指令保存了用户用户寄存器到trapframe page中，具体的寄存器可以对应到头文件kernel&#x2F;proc.h中的trapframe结构。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">struct trapframe &#123;</span><br><span class="line">  /*   0 */ uint64 kernel_satp;   // kernel page table</span><br><span class="line">  /*   8 */ uint64 kernel_sp;     // top of process&#x27;s kernel stack</span><br><span class="line">  /*  16 */ uint64 kernel_trap;   // usertrap()</span><br><span class="line">  /*  24 */ uint64 epc;           // saved user program counter</span><br><span class="line">  /*  32 */ uint64 kernel_hartid; // saved kernel tp</span><br><span class="line">  /*  40 */ uint64 ra;</span><br><span class="line">  /*  48 */ uint64 sp;</span><br><span class="line">  /*  56 */ uint64 gp;</span><br><span class="line">  /*  64 */ uint64 tp;</span><br><span class="line">  /*  72 */ uint64 t0;</span><br><span class="line">  /*  80 */ uint64 t1;</span><br><span class="line">  /*  88 */ uint64 t2;</span><br><span class="line">  /*  96 */ uint64 s0;</span><br><span class="line">  /* 104 */ uint64 s1;</span><br><span class="line">  /* 112 */ uint64 a0;</span><br><span class="line">  /* 120 */ uint64 a1;</span><br><span class="line">  /* 128 */ uint64 a2;</span><br><span class="line">  /* 136 */ uint64 a3;</span><br><span class="line">  /* 144 */ uint64 a4;</span><br><span class="line">  /* 152 */ uint64 a5;</span><br><span class="line">  /* 160 */ uint64 a6;</span><br><span class="line">  /* 168 */ uint64 a7;</span><br><span class="line">  /* 176 */ uint64 s2;</span><br><span class="line">  /* 184 */ uint64 s3;</span><br><span class="line">  /* 192 */ uint64 s4;</span><br><span class="line">  /* 200 */ uint64 s5;</span><br><span class="line">  /* 208 */ uint64 s6;</span><br><span class="line">  /* 216 */ uint64 s7;</span><br><span class="line">  /* 224 */ uint64 s8;</span><br><span class="line">  /* 232 */ uint64 s9;</span><br><span class="line">  /* 240 */ uint64 s10;</span><br><span class="line">  /* 248 */ uint64 s11;</span><br><span class="line">  /* 256 */ uint64 t3;</span><br><span class="line">  /* 264 */ uint64 t4;</span><br><span class="line">  /* 272 */ uint64 t5;</span><br><span class="line">  /* 280 */ uint64 t6;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>此时a0寄存器的值是<code>x3fffffe000</code>，这是trapframe page的虚拟地址，上述汇编指令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrrw   a0,sscratch,a0</span><br></pre></td></tr></table></figure>
+
+<p>将a0寄存器和sscratch寄存器的内容进行了交换。</p>
+<p>trampoline的uservec函数的最后一条指令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jr t0</span><br></pre></td></tr></table></figure>
+
+<p>将会跳转到usertrap函数地址。</p>
+<p>在usertrap函数中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// save user program counter.</span><br><span class="line">p-&gt;trapframe-&gt;epc = r_sepc();</span><br></pre></td></tr></table></figure>
+
+<p>这一段代码将会保存用户的pc（之前已经将用户的pc保存在sepc中了）。为什么需要保存呢？因为可能存在这样的一种情况，当程序还在内核执行时，我们可能切换到另一个进程并进入那个程序的用户空间，而它可能再调用另一个系统调用，导致sepc寄存器的内容被覆盖。所以需要将该进程的sepc寄存器保存到一个与该进程关联的内存中（进程自己的trapframe），这样这个数据才不会被覆盖丢失。</p>
+<p>详细的细节不赘述，接下来值得注意的是，usertrap执行后会调用usertrapret，此函数主要是在即将返回user mode时，恢复一些进入trap前的状态数据，为下次重新进入trap机制做准备，并正常返回用户空间。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">//</span><br><span class="line">// return to user space</span><br><span class="line">//</span><br><span class="line">void</span><br><span class="line">usertrapret(void)</span><br><span class="line">&#123;</span><br><span class="line">...</span><br><span class="line">// send syscalls, interrupts, and exceptions to trampoline.S</span><br><span class="line">// 重新将stvec寄存器设置为uservec函数地址，为next reentry做准备</span><br><span class="line">w_stvec(TRAMPOLINE + (uservec - trampoline));</span><br><span class="line"></span><br><span class="line">// set up trapframe values that uservec will need when</span><br><span class="line">// the process next re-enters the kernel.</span><br><span class="line">p-&gt;trapframe-&gt;kernel_satp = r_satp();         // kernel page table</span><br><span class="line">p-&gt;trapframe-&gt;kernel_sp = p-&gt;kstack + PGSIZE; // process&#x27;s kernel stack</span><br><span class="line">p-&gt;trapframe-&gt;kernel_trap = (uint64)usertrap;</span><br><span class="line">p-&gt;trapframe-&gt;kernel_hartid = r_tp();         // hartid for cpuid()</span><br><span class="line"></span><br><span class="line">// set up the registers that trampoline.S&#x27;s sret will use</span><br><span class="line">// to get to user space.</span><br><span class="line"></span><br><span class="line">// set S Previous Privilege mode to User.</span><br><span class="line">unsigned long x = r_sstatus();</span><br><span class="line">// SPP比特位决定了返回用户态还是其他状态</span><br><span class="line">x &amp;= ~SSTATUS_SPP; // clear SPP to 0 for user mode</span><br><span class="line">x |= SSTATUS_SPIE; // enable interrupts in user mode</span><br><span class="line">w_sstatus(x);</span><br><span class="line"></span><br><span class="line">// set S Exception Program Counter to the saved user pc.</span><br><span class="line">// 将sepc寄存器更新为用户程序计数器（usertrap中将程序计数器存储于trapframe-&gt;epc中），sret机器指令将会将pc设置为sepc的值并将状态切换回用户模式，重新启动中断</span><br><span class="line">w_sepc(p-&gt;trapframe-&gt;epc);</span><br><span class="line"></span><br><span class="line">// tell trampoline.S the user page table to switch to.</span><br><span class="line">uint64 satp = MAKE_SATP(p-&gt;pagetable);</span><br><span class="line"></span><br><span class="line">// jump to trampoline.S at the top of memory, which</span><br><span class="line">// switches to the user page table, restores user registers,</span><br><span class="line">// and switches to user mode with sret.</span><br><span class="line">// 计算出汇编函数userret的虚拟内存地址，并在下一句代码传入TRAPFRAME和satp两个参数并执行userret，两个参数放在a0和a1寄存器中</span><br><span class="line">uint64 fn = TRAMPOLINE + (userret - trampoline);</span><br><span class="line">((void (*)(uint64,uint64))fn)(TRAPFRAME, satp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1rS4y1n7y1/?p=5">https://www.bilibili.com/video/BV1rS4y1n7y1/?p=5</a></li>
+<li><a target="_blank" rel="noopener" href="https://lghost1999.github.io/mit-6.s081-lab4-traps">https://lghost1999.github.io/mit-6.s081-lab4-traps</a></li>
+<li><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/lec/l-internal.txt">https://pdos.csail.mit.edu/6.828/2020/lec/l-internal.txt</a></li>
+<li><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.S081/2020/lec/l-riscv.txt">https://pdos.csail.mit.edu/6.S081/2020/lec/l-riscv.txt</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/261294574">https://zhuanlan.zhihu.com/p/261294574</a></li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/64211181/whats-the-difference-between-caller-saved-and-callee-saved-in-risc-v">https://stackoverflow.com/questions/64211181/whats-the-difference-between-caller-saved-and-callee-saved-in-risc-v</a></li>
+<li><a target="_blank" rel="noopener" href="https://danielmangum.com/posts/risc-v-bytes-caller-callee-registers/">https://danielmangum.com/posts/risc-v-bytes-caller-callee-registers/</a></li>
+<li><a target="_blank" rel="noopener" href="https://danielmangum.com/posts/risc-v-bytes-qemu-gdb/">https://danielmangum.com/posts/risc-v-bytes-qemu-gdb/</a></li>
+<li><a target="_blank" rel="noopener" href="https://decaf-lang.github.io/minidecaf-tutorial-deploy/docs/lab9/calling.html">https://decaf-lang.github.io/minidecaf-tutorial-deploy/docs/lab9/calling.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec06-isolation-and-system-call-entry-exit-robert/6.5-uservec">https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/lec06-isolation-and-system-call-entry-exit-robert/6.5-uservec</a></li>
+<li><a target="_blank" rel="noopener" href="https://wizardforcel.gitbooks.io/100-gdb-tips/content/finish-and-return.html">https://wizardforcel.gitbooks.io/100-gdb-tips/content/finish-and-return.html</a></li>
+</ul>
+
+  </div>
+  
+    
+      <a id="older" class="blog-nav" href="/2022/07/08/mit6-824-lab-3A-assignment/">OLDER&nbsp;&gt;</a>
+      
+        
+            
+</div>
+        <div class="footer">
+  
+    <div class="footer-more">
+      
+        Copyright © lane 2021
+        
+    </div>
+  
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://github.com/leedom92/hexo-theme-leedom">Theme by Leedom | Powered by Hexo</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="back-to-top hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+      
+  <div class="search-icon" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-box">
+        <div class="search-title">
+          <!-- <span class="search-icon-input">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </span> -->
+          
+            <input type="text" class="search-input" id="search-input" placeholder="$ grep...">
+          
+          <span class="search-close-icon" id="search-close-icon">
+            <a href="javascript: void(0)">
+              <i class="iconfont icon-close"></i>
+            </a>
+          </span>
+        </div>
+        <div class="search-result" id="search-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    // inputArea.onclick = function() {
+    //   getSearchFile()
+    //   this.onclick = null
+    // }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        inputArea.focus()
+        getSearchFile()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'><span></ul>";
+      // $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'><h2>" + orig_data_title + "</h2></a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<h3 class=\"search-result-abstract\">" + match_content + "...</h3>"
+                }
+                str += "<hr></li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/leedom92/hexo-theme-leedom#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+    </div>
+  </body>
+</html>
